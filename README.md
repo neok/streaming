@@ -8,6 +8,7 @@ Two services, one repo:
 - **playback** — HTTP. Serves master/variant playlists and `.ts` segments. Rewrites segment URLs with an HMAC signature and expiry, so only signed requests can fetch bytes. Tenant isolation enforced in middleware.
 
 Storage is behind an interface — today it's disk, swap in S3 later without touching callers.
+<img width="1177" height="1699" alt="Screenshot 2026-04-22 184645" src="https://github.com/user-attachments/assets/8d984f11-639d-44ae-9f08-919eafce1bbc" />
 
 ---
 
