@@ -1,0 +1,24 @@
+ARG GO_VERSION=1.26
+
+FROM golang:${GO_VERSION}-alpine AS build
+WORKDIR /src
+
+RUN apk add --no-cache git
+
+COPY go.mod go.sum* ./
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -trimpath \
+    -ldflags="-s -w" \
+    -o /out/app ./cmd/ingest
+
+FROM alpine:3.20 AS runtime
+RUN apk add --no-cache ffmpeg ca-certificates \
+    && addgroup -S app && adduser -S -G app app \
+    && mkdir -p /var/streaming && chown app:app /var/streaming
+COPY --from=build /out/app /usr/local/bin/app
+USER app
+ENTRYPOINT ["/usr/local/bin/app"]

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package ingest.v1;
+
+option go_package = "github.com/neok/streaming/proto;ingestv1";
+
+service Ingest {
+  rpc Upload(UploadRequest) returns (UploadResponse);
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+}
+
+message UploadRequest {
+  string tenant_slug = 1;
+  string title       = 2;
+  string source_path = 3;
+}
+
+message UploadResponse {
+  int64 video_id = 1;
+}
+
+message GetStatusRequest {
+  int64 video_id = 1;
+}
+
+message GetStatusResponse {
+  string status = 1;
+  string error  = 2;
+}

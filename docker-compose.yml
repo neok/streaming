@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: streaming
+      POSTGRES_PASSWORD: streaming
+      POSTGRES_DB: streaming
+    ports:
+      - "55432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U streaming"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "56379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  ingest:
+    build:
+      context: .
+      dockerfile: Dockerfile.ingest
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://streaming:streaming@postgres:5432/streaming?sslmode=disable
+      MEDIA_DIR: /var/streaming
+      GRPC_ADDR: ":9090"
+    ports:
+      - "9090:9090"
+    volumes:
+      - media_data:/var/streaming
+
+  playback:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: playback
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://streaming:streaming@postgres:5432/streaming?sslmode=disable
+      MEDIA_DIR: /var/streaming
+      HTTP_ADDR: ":9005"
+      REDIS_ADDR: redis:6379
+      SIGNING_SECRET: ${SIGNING_SECRET:-dev-secret-change-me}
+      SIGNATURE_TTL: 1h
+    ports:
+      - "9005:9005"
+    volumes:
+      - media_data:/var/streaming:ro
+
+volumes:
+  postgres_data:
+  media_data:

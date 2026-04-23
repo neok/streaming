@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head><title>OTT Demo Player</title></head>
+<body>
+  <h2>OTT Demo Player</h2>
+  <label>Tenant: <input id="tenant" value="demo"></label>
+  <label>Video ID: <input id="vid" value="1"></label>
+  <button onclick="load()">Load</button>
+  <br><br>
+  <video id="video" controls width="800"></video>
+  <br>
+  <label>Quality: <select id="quality"><option value="-1">Auto</option></select></label>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script>
+    let hls;
+    function load() {
+      const tenant = document.getElementById('tenant').value;
+      const vid = document.getElementById('vid').value;
+      const src = `http://localhost:9005/tenants/${tenant}/videos/${vid}/master.m3u8`;
+      const video = document.getElementById('video');
+      const select = document.getElementById('quality');
+      select.innerHTML = '<option value="-1">Auto</option>';
+
+      if (hls) hls.destroy();
+      hls = new Hls();
+      hls.loadSource(src);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
+        data.levels.forEach((l, i) => {
+          select.add(new Option(`${l.height}p @ ${Math.round(l.bitrate/1000)}kbps`, i));
+        });
+      });
+      select.onchange = () => { hls.currentLevel = parseInt(select.value); };
+    }
+  </script>
+</body>
+</html>
